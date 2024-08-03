@@ -1,12 +1,16 @@
-import { Pool } from "pg";
-import { NodePgDatabase, drizzle } from "drizzle-orm/node-postgres";
+// import { Pool } from "pg";
 
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("Database credentials missing.");
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const sql = neon(process.env.DRIZZLE_DATABASE_URL!);
 
-export const db: NodePgDatabase<typeof schema> = drizzle(pool, { schema });
+export const db = drizzle(sql, {
+  schema,
+  // logger: console.log,
+});
