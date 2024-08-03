@@ -1,38 +1,39 @@
-# use the official Bun image
-# see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1 AS base
-WORKDIR /usr/src/app
+# syntax = docker/dockerfile:1
 
-# install dependencies into temp directory
-# this will cache them and speed up future builds
-FROM base AS install
-RUN mkdir -p /temp/dev
-COPY package.json bun.lockb /temp/dev/
-RUN cd /temp/dev && bun install --frozen-lockfile
+# Adjust BUN_VERSION as desired
+# ARG BUN_VERSION=1.0.0
+FROM oven/bun as base
 
-# install with --production (exclude devDependencies)
-RUN mkdir -p /temp/prod
-COPY package.json bun.lockb /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
+LABEL fly_launch_runtime="Bun"
 
-# copy node_modules from temp directory
-# then copy all (non-ignored) project files into the image
-FROM base AS prerelease
-COPY --from=install /temp/dev/node_modules node_modules
-COPY . .
+# Bun app lives here
+WORKDIR /app
 
-# # [optional] tests & build
-# ENV NODE_ENV=production
-# RUN bun test
-# RUN bun run build
+# Set production environment
+ENV NODE_ENV="production"
+# ENV DATABASE_URL=""
 
-# copy production dependencies and source code into final image
-FROM base AS release
-COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/index.ts .
-COPY --from=prerelease /usr/src/app/package.json .
+# Throw-away build stage to reduce size of final image
+FROM base as build
 
-# run the app
-USER bun
-EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", "index.ts" ]
+# Install packages needed to build node modules
+RUN apt-get update -qq && \
+    apt-get install -y build-essential pkg-config python-is-python3
+
+# Install node modules
+COPY --link bun.lockb package.json ./
+RUN bun install --ci
+
+# Copy application code
+COPY --link . .
+
+
+# Final stage for app image
+FROM base
+
+# Copy built application
+COPY --from=build /app /app
+
+# Start the server by default, this can be overwritten at runtime
+EXPOSE 3000
+CMD [ "bun", "run", "dev" ]
