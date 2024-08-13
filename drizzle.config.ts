@@ -4,6 +4,7 @@ export default {
   schema: "./src/db/schema/index.ts",
   out: "./drizzle",
   dialect: "postgresql",
+  // dialect: "sqlite",
   dbCredentials: {
     url: String(process.env.DRIZZLE_DATABASE_URL),
     // host: String(process.env.DATABASE_HOST),

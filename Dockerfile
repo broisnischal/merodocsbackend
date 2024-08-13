@@ -11,6 +11,9 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV="production"
+ENV PORT="3000"
+ENV DRIZZLE_DATABASE_URL="postgresql://neondb_owner:HvQ8UyEab0jq@ep-still-bush-a5e3y5t2.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
 # ENV DATABASE_URL=""
 
 # Throw-away build stage to reduce size of final image
@@ -26,7 +29,6 @@ RUN bun install --ci
 
 # Copy application code
 COPY --link . .
-
 
 # Final stage for app image
 FROM base

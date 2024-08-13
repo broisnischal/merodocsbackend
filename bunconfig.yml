@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bunapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bunapp
+  template:
+    metadata:
+      labels:
+        app: bunapp
+    spec:
+      containers:
+      - name: bunapp
+        image: neeswebservice/kube-repo:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: DRIZZLE_DATABASE_URL
+          value: "postgresql://neondb_owner:HvQ8UyEab0jq@ep-still-bush-a5e3y5t2.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-bun-app-service
+spec:
+  # type: LoadBalancer
+  type: NodePort
+  selector:
+    app: bunapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 30080
